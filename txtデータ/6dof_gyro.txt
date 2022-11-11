@@ -1,0 +1,68 @@
+#include "mbed.h"
+#include "ITG3200.h"
+#define samplingtime 0.01
+#define M_PI 3.1415926536
+
+I2C i2c(p9,p10);//p28,p27
+Serial pc(USBTX, USBRX);
+ITG3200 gyro(p9, p10);
+Timer t;
+Ticker Stimer;
+
+int readings[3] = {0, 0, 0};
+int i,j,c=1;
+short int m,n=0,anglelog=0,Gx,Gy,Gz,nGx,nGy,nGz;
+float Anz,reAnz,vewAnz,Any,reAny,vewAny,Anx,reAnx,vewAnx,samT;
+double roll,pitch,yow;
+double accx,accy,accz;
+double a,sqx,sqy,sqz;
+
+void Gyro(){
+    Gx=gyro.getGyroX();
+    Gy=gyro.getGyroY();
+    Gz=gyro.getGyroZ();//1=0.03051804379(deg/s)
+    nGx=Gx+11;
+    nGy=Gy-42;
+    nGz=Gz;          //offset correct
+    if(-2<=nGx && nGx<=4) {
+        nGx=0;
+    }
+    if(-2<=nGy && nGy<=2) {
+        nGy=0;
+    }
+    if(-2<=nGz && nGz<=4) {
+        nGz=0;
+    }
+    reAnz=nGz*samplingtime;  //integral
+    Anz = Anz+reAnz;
+    vewAnz=Anz*0.03051757813*24.5;//4610/65534
+    reAny=nGy*samplingtime;  //integral
+    Any = Any+reAny;
+    vewAny=Any*0.03051757813*24.5;//4610/65534
+    reAnx=nGx*samplingtime;  //integral
+    Anx = Anx+reAnx;
+    vewAnx=Anx*0.03051757813*24.5;//4610/65534
+
+    pc.printf("vewAnx:%f vewAny:%f vewAnz:%f\n\r", vewAnx, vewAny, vewAnz);
+}
+
+int main() {
+    wait_ms(500);//サーボのシリアル通信のための待ち時間
+    pc.baud(115200);
+    pc.printf("now starting ITG-3200 test...\n");
+    gyro.setLpBandwidth(LPFBW_42HZ);
+    //Stimer.attach(&sensor,samplingtime);
+
+    while (1){
+        wait(0.1);
+ 
+        //pc.printf("ITG3200 DevID 0x%02X\n",gyro.getWhoAmI()); //was gyro1.getWhoAmI()
+        //pc.printf("ADXL DevID is: 0x%02x\n", accelerometer.getDeviceID());
+        //pc.printf("a:%f Ax:%f Ay:%f Az:%f\n", a, roll, pitch, yow);
+        pc.printf("%f,%f,%f\n", roll, pitch, yow);
+        //pc.printf("Ax:%f Ay:%f Az:%f\n", accx, accy, accz);
+        Gyro();
+        //wait(1);
+        c=c+1;
+    }
+}

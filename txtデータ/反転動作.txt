@@ -1,0 +1,236 @@
+//上下反転状態から
+
+#include "mbed.h"
+#define ON 1
+#define OFF 0
+
+Serial serial_servo(p9,p10);
+Serial pc(USBTX,USBRX);
+
+unsigned short mask_h = 65408; //マスク処理上8bits(0b1111111110000000)
+unsigned short mask_l = 127;   //マスク処理下8bits(0b0000000001111111)
+
+int i,j,k;
+int n;
+int first,second,third;
+char ch,flag_close,flag_set,flag_flip,flag_end;
+unsigned char tx[3];
+
+unsigned short servo_position(unsigned char id,int pos)
+{
+    tx[0] = 0x80|id;
+    tx[1] = (unsigned char)((pos & mask_h)>>7);
+    tx[2] = (unsigned char)(pos & mask_l);
+        
+    for(i=0;i<3;i++)
+    {
+        serial_servo.putc(tx[i]);
+    }
+    return 0;
+}
+
+unsigned short servo_speed(unsigned char id,int speed)
+{
+        tx[0] = 0xC0|id;
+        tx[1] = 0x02;
+        tx[2] = 0x00|speed;        
+        for(i=0;i<3;i++)
+        {
+            serial_servo.putc(tx[i]);
+        }
+        return 0;
+}
+
+void pc_command()
+{
+    ch = pc.getc();
+    pc.putc(ch);
+}
+
+void close_motion()
+{
+    for(j=1;j<13;j++)
+    {
+        servo_speed(j,30);
+        wait_ms(2);
+    }
+    
+    for(j=1;j<5;j++)
+    {
+        servo_position(3*j-2,10167);
+        wait_ms(2);
+        servo_position(3*j-1,7600);
+        wait_ms(2);
+        servo_position(3*j,11500);
+        wait_ms(2);
+    }
+    wait_ms(2000);
+    
+    for(j=1;j<5;j++)
+    {
+        servo_position(3*j-1,4933);
+        wait_ms(2);
+    }
+}
+
+void set_motion()
+{
+    for(j=1;j<13;j++)
+    {
+        servo_speed(j,30);
+        wait_ms(2);
+    }
+    
+    servo_position(2,7500);
+    wait_ms(2);
+    servo_position(5,7500);
+    wait_ms(2);
+    servo_position(11,7500);
+    wait_ms(500);
+    
+    servo_position(1,9870);
+    wait_ms(2);
+    servo_position(3,8922);
+    wait_ms(2);
+}
+
+void flip_motion()
+{
+    for(j=1;j<13;j++)
+    {
+        servo_speed(j,50);
+        wait_ms(2);
+    }
+    first = 8158;
+    second = 7600;
+    third = 9116;
+    
+    servo_position(4,first);
+    wait_ms(2);
+    servo_position(5,second);
+    wait_ms(2);
+    servo_position(6,third);
+    wait_ms(2);
+    servo_position(10,first);
+    wait_ms(2);
+    servo_position(11,second);
+    wait_ms(2);
+    servo_position(12,third);
+    wait_ms(1000);
+    
+    servo_position(3,7500);
+    wait_ms(500);
+    
+    servo_position(1,first);
+    wait_ms(2);
+    servo_position(2,second);
+    wait_ms(2);
+    servo_position(3,third);
+    wait_ms(500);
+    
+    servo_position(1,8907);
+    wait_ms(2);
+    servo_position(3,10563);
+    wait_ms(2);
+    servo_position(8,7500);
+    wait_ms(500);
+    servo_position(7,8907);
+    wait_ms(2);
+    servo_position(9,10563);
+    wait_ms(2);
+}
+
+void end_motion()
+{
+    for(j=1;j<13;j++)
+    {
+        servo_speed(j,30);
+        wait_ms(2);
+    }
+    first = 9459;
+    third = 10495;
+    
+    servo_position(4,first);
+    wait_ms(2);
+    servo_position(6,third);
+    wait_ms(2);
+    servo_position(10,first);
+    wait_ms(2);
+    servo_position(12,third);
+    wait_ms(300);
+    
+    first = 8907;
+    third = 10565;
+    
+    servo_position(4,first);
+    wait_ms(2);
+    servo_position(6,third);
+    wait_ms(2);
+    servo_position(10,first);
+    wait_ms(2);
+    servo_position(12,third);
+    wait_ms(1000);
+}
+
+int main()
+{
+    wait_ms(500);
+    serial_servo.baud(115200);
+    serial_servo.format(8,Serial::Even,1);
+    
+    pc.baud(115200);
+    pc.format(8,Serial::None,1);
+    
+    pc.printf("key:");
+    pc.attach(pc_command,Serial::RxIrq);
+    
+    while(1)
+    {
+        switch(ch)
+        {
+            case 'c':
+            close_motion();
+            wait_ms(20);
+            ch = 0;
+            flag_close = ON;
+            flag_set = OFF;
+            break;
+                
+            case '1':
+            if(flag_close == ON)
+            {
+                set_motion();
+                wait_ms(20);
+                flag_set = ON;
+                flag_close = OFF;
+            }
+            ch = 0;
+            break;
+            
+            case '2':
+            if(flag_set == ON)
+            {
+                flip_motion();
+                wait_ms(20);
+                flag_set = OFF;
+                flag_flip = ON;
+            }
+            ch = 0;
+            break;
+            
+            case '3':
+            if(flag_flip == ON)
+            {
+                end_motion();
+                wait_ms(20);
+                flag_flip = OFF;
+                flag_end = ON;
+            }
+            ch = 0;
+            break;
+            
+            default:
+            break;
+        }
+    }
+}

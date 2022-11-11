@@ -1,0 +1,66 @@
+#include "mbed.h"
+
+Serial XBee(PB_6,PB_7); //XBee用
+//PwmOut servo(PA_2);
+Serial serial_servo(PA_2,PA_3);
+
+unsigned short mask_h = 65408; //マスク処理上8bits(0b1111111110000000)
+unsigned short mask_l = 127;   //マスク処理下8bits(0b0000000001111111)
+
+char ch;
+int i,j;
+unsigned char tx[3];
+
+void XBee_Command(){
+    ch = XBee.getc();
+    XBee.putc(ch);
+}
+
+unsigned short servo_position(unsigned char id,int pos)
+{
+    tx[0] = 0x80|id;
+    tx[1] = (unsigned char)((pos & mask_h)>>7);
+    tx[2] = (unsigned char)(pos & mask_l);
+    wait_ms(2);
+    for(j=0;j<3;j++)
+    {
+        serial_servo.putc(tx[j]);
+    }
+    return 0;
+}
+
+int main()
+{
+    wait_ms(500);
+    serial_servo.baud(115200);
+    serial_servo.format(8,Serial::Even,1);
+    XBee.baud(9600);
+    XBee.format(8,Serial::None,1);
+    XBee.attach(XBee_Command, Serial::RxIrq);  //XBeeが信号を受信したら行う
+    i= 10000;
+    servo_position(10,i);
+    
+    while(1){
+        switch(ch)
+        {
+            case 'a':
+            for(i=10000; i<=11000; i=i+5){
+                servo_position(10,i);
+                wait(0.01);
+            }
+            ch=0;
+            break;
+            
+            case 'b':
+            for(i=1500; i>=1000; i=i-5){
+                //servo.pulsewidth_us(i);
+                wait(0.01);
+            }
+            ch=0;   
+            break;
+            
+            default:
+            break;
+        }
+    }
+}

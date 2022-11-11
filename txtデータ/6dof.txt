@@ -1,0 +1,107 @@
+#include "mbed.h"
+#include "ADXL345_I2C.h"
+#include "ITG3200.h"
+#define samplingtime 0.01
+#define M_PI 3.1415926536
+LocalFileSystem local("local");
+
+I2C i2c(p9,p10);//p28,p27
+Serial pc(USBTX, USBRX);
+ADXL345_I2C accelerometer(p9, p10); //device i2c DevId
+ITG3200 gyro(p9, p10);
+Timer t;
+Ticker Stimer;
+
+int readings[3] = {0, 0, 0};
+int i,j,c=1;
+short int m,n=0,anglelog=0,Gx,Gy,Gz,nGx,nGy,nGz;
+float Anz,reAnz,vewAnz,Any,reAny,vewAny,Anx,reAnx,vewAnx,samT;
+double roll,pitch,yow;
+double accx,accy,accz;
+double a,sqx,sqy,sqz;
+
+void Gyro(){
+    Gx=gyro.getGyroX();
+    Gy=gyro.getGyroY();
+    Gz=gyro.getGyroZ();//1=0.03051804379(deg/s)
+    nGx=Gx+11;
+    nGy=Gy-42;
+    nGz=Gz;          //offset correct
+    if(-2<=nGx && nGx<=4) {
+        nGx=0;
+    }
+    if(-2<=nGy && nGy<=2) {
+        nGy=0;
+    }
+    if(-2<=nGz && nGz<=4) {
+        nGz=0;
+    }
+    reAnz=nGz*samplingtime;  //integral
+    Anz = Anz+reAnz;
+    vewAnz=Anz*0.03051757813*24.5;//4610/65534
+    reAny=nGy*samplingtime;  //integral
+    Any = Any+reAny;
+    vewAny=Any*0.03051757813*24.5;//4610/65534
+    reAnx=nGx*samplingtime;  //integral
+    Anx = Anx+reAnx;
+    vewAnx=Anx*0.03051757813*24.5;//4610/65534
+
+    pc.printf("vewAnx:%f vewAny:%f vewAnz:%f\n\r", vewAnx, vewAny, vewAnz);
+}
+
+int main() {
+    wait_ms(500);//サーボのシリアル通信のための待ち時間
+    pc.baud(115200);
+    pc.printf("now starting ITG-3200 test...\n");
+    gyro.setLpBandwidth(LPFBW_42HZ);
+    //Stimer.attach(&sensor,samplingtime);
+    
+    FILE *fp1 = fopen("/local/temp.CSV", "w");
+    
+    pc.printf("Starting ADXL345 test...\n");
+    wait(1);
+    pc.printf("Device ID is: 0x%02x\n", accelerometer.getDeviceID());
+    wait(1);
+
+    ////デバイスを設定するためにスタンバイモードに入る
+    accelerometer.setPowerControl(0x00);
+    //Full resolution, +/-16g, 4mg/LSB.
+    accelerometer.setDataFormatControl(0x0B);
+    //3.2kHz data rate.
+    accelerometer.setDataRate(ADXL345_3200HZ);
+    //測定モード
+    accelerometer.setPowerControl(0x08);
+
+    while (1){
+        wait(0.1);
+        accelerometer.getOutput(readings);
+        accx = (int16_t)readings[0];
+        accy = (int16_t)readings[1];
+        accz = (int16_t)readings[2];
+        //重力のみに
+        accx = (accx+30)*0.00390635;
+        accy = (accy-24)*0.00390635;
+        accz = accz*0.00390635;
+        a = sqrt((accx*accx)+(accy*accy)+(accz*accz));  //a=1G=9.8m/s
+        sqx = sqrt((accy*accy)+(accz*accz));
+        sqy = sqrt((accx*accx)+(accz*accz));
+        sqz = sqrt((accx*accx)+(accy*accy));
+        pitch = -atan(accx/sqx) * 180/M_PI;
+        roll = atan(accy/sqy) * 180/M_PI;
+        yow = atan(accz/sqz) * 180/M_PI;
+        //pitch = atan2(accx+30, accz-8) * 180/M_PI;
+        //roll = atan2(accy-24,accz-8) * 180/M_PI;
+        //pc.printf("ITG3200 DevID 0x%02X\n",gyro.getWhoAmI()); //was gyro1.getWhoAmI()
+        //pc.printf("ADXL DevID is: 0x%02x\n", accelerometer.getDeviceID());
+        //pc.printf("a:%f Ax:%f Ay:%f Az:%f\n", a, roll, pitch, yow);
+        pc.printf("%f,%f,%f\n", roll, pitch, yow);
+        //pc.printf("Ax:%f Ay:%f Az:%f\n", accx, accy, accz);
+        Gyro();
+        //wait(1);
+        fprintf(fp1,"%d,%f,%f,%d,%f,%f,%d,%f,%f\n", c, roll, vewAnx, c, pitch, vewAny, c, yow , vewAnz);
+        if(c==100){
+           fclose(fp1); 
+        }
+        c=c+1;
+    }
+}

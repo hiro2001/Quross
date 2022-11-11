@@ -1,0 +1,34 @@
+*#include "mbed.h"
+LocalFileSystem local("local");  // マウントポイントを定義（ディレクトリパスになる）
+Serial pc(USBTX,USBRX);
+
+int line=0;
+int i=0,j,c=0;
+int main(){
+FILE *fp; // FILE型構造体
+int chr, deg[4];
+
+    fp = fopen("/local/test.txt", "r"); // ファイルを開く。失敗するとNULLを返す。
+    pc.printf("\nread start\n");
+    while((chr = fgetc(fp)) != EOF) {
+        deg[i]=chr;
+        i++;
+        if(chr==','){
+            c++;
+            i=i-2;
+            for(j=0;j<=i;j++){
+                //pc.printf("%c", deg[j]);
+            }
+            
+            pc.printf(" ");
+            if(c==12){
+                line++;
+                c=0;
+            }
+            i=0;
+        }
+    }
+    fclose(fp); // ファイルを閉じる
+    //pc.printf("\n%d列\n", line);
+    return 0;
+}*/
