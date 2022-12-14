@@ -74,10 +74,10 @@ int main(){
 
             case 'q':
 	    printf("start");
-            for(i = 3; i <= 12; i +=3){
+/*            for(i = 3; i <= 12; i +=3){
                 servo_speed(fd, i,50);
                 servo_position(fd, i,10110);
-            }
+            }*/
             i = 9;
             servo_speed(fd, i,50);
             servo_position(fd, i,6500);
