@@ -11,6 +11,7 @@
 
 #define BLINKING_RATE_MS 500
 #define BUFFERDSIZE 5
+#define SERIAL_PORT "/dev/ttyAMA0"
 
 /*RawSerial serial_servo(D1,D0);
 RawSerial pc(USBTX,USBRX);*/
@@ -27,6 +28,7 @@ unsigned char rx[10];
 int opens(){
         int fd;
  	int rv; 
+    struct termios tio;
     struct timeval timeout;
 
     timeout.tv_sec = 0;
@@ -48,7 +50,7 @@ int opens(){
     bzero(&tio, sizeof(tio));
 
     /* 115200bps, フロー制御有り, ８ビット，DTR/DSR無効，受信可能 */
-    tio.c_cflag = B115200 | CRTSCTS | CS8 | CLOCAL | CREAD;
+    tio.c_cflag = B115200 | CRTSCTS | CS8 | CLOCAL | CREAD | PARENB; 
     tio.c_cc[VMIN] = 1; /* 入力データをバッファしない */
     tcsetattr(fd, TCSANOW, &tio); /* アトリビュートのセット */
 
@@ -100,7 +102,7 @@ int main(){
                 servo_speed(fd, i,50);
                 servo_position(fd, i,10110);
             }*/
-            i = 9;
+            i = 6;
             servo_speed(fd, i,50);
             servo_position(fd, i,6500);
             usleep(0.5*1000000);
