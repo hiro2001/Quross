@@ -102,7 +102,7 @@ int main(){
                 servo_speed(fd, i,50);
                 servo_position(fd, i,10110);
             }
-            usleep(0.5*100000);
+            usleep(5*100000);
 	    ch=0;
             break;
             case 'w':
@@ -111,7 +111,7 @@ int main(){
                 servo_speed(fd, i,50);
                 servo_position(fd, i,6000);
             }
-            usleep(0.5*100000);
+            usleep(5*100000);
 	    ch=0;
             break;
             case 's':
