@@ -21,7 +21,6 @@ unsigned short mask_l = 127;   //マスク処理下8bits(0b0000000001111111)
 int j;
 int n;
 int p=1;
-char ch;
 unsigned char tx[3];
 unsigned char rx[10];
 
@@ -86,6 +85,10 @@ unsigned short servo_speed(int fd, unsigned char id,int speed){
 
 int main(){
     int po = 1, i, fd = 0;
+    char ch =0;
+    wiringPiSetupGpio();
+    pullUpDnControl(14,PUD_UP);
+    pullUpDnControl(15,PUD_UP);
     usleep(50*1000);
     //serial_servo.baud(115200);
     //serial_servo.format(8,SerialBase::Even,1);
@@ -93,25 +96,26 @@ int main(){
     
     
     while(1){
-	scanf("%c",&ch);
-        switch(ch){
+	scanf(" %c",&ch);
+        if(ch > 0x2f){ 
+	switch(ch){
 
             case 'q':
-	    printf("start");
+	    printf("start\n");
             for(i = 3; i <= 12; i +=3){
                 servo_speed(fd, i,50);
                 servo_position(fd, i,10110);
             }
-            usleep(5*100000);
+            usleep(0.5*1000000);
 	    ch=0;
             break;
-            case 'w':
-	    printf("start");
+            case 'u':
+	    printf("start\n");
             for(i = 3; i <= 12; i +=3){
                 servo_speed(fd, i,50);
                 servo_position(fd, i,6000);
             }
-            usleep(5*100000);
+            usleep(0.5*1000000);
 	    ch=0;
             break;
             case 's':
@@ -120,10 +124,13 @@ int main(){
 	    break;
             
 	    default:
-            break;
+            printf("def\n");
+	    ch = 0;
+	    break;
         }
+	}
     }
-		digitalWrite(18, 0);
+//		digitalWrite(18, 0);
 		return 0;
 }
 
