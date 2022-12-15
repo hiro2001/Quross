@@ -98,17 +98,24 @@ int main(){
 
             case 'q':
 	    printf("start");
-/*            for(i = 3; i <= 12; i +=3){
+            for(i = 3; i <= 12; i +=3){
                 servo_speed(fd, i,50);
                 servo_position(fd, i,10110);
-            }*/
-            i = 6;
-            servo_speed(fd, i,50);
-            servo_position(fd, i,6500);
-            usleep(0.5*1000000);
+            }
+            usleep(0.5*100000);
+	    ch=0;
+            break;
+            case 'w':
+	    printf("start");
+            for(i = 3; i <= 12; i +=3){
+                servo_speed(fd, i,50);
+                servo_position(fd, i,6000);
+            }
+            usleep(0.5*100000);
 	    ch=0;
             break;
             case 's':
+	    close(fd);  
 	    exit(1);
 	    break;
             
