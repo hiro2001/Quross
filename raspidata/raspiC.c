@@ -13,19 +13,13 @@
 #define BUFFERDSIZE 5
 #define SERIAL_PORT "/dev/ttyAMA0"
 
-/*RawSerial serial_servo(D1,D0);
-RawSerial pc(USBTX,USBRX);*/
-//static UnbufferedSerial serial_servo(D1, D0, 115200);
 unsigned short mask_h = 65408; //マスク処理上8bits(0b1111111110000000)
 unsigned short mask_l = 127;   //マスク処理下8bits(0b0000000001111111)
-int j;
-int n;
-int p=1;
 unsigned char tx[3];
 unsigned char rx[10];
 
 int opens(){
-        int fd;
+    int fd;
  	int rv; 
     struct termios tio;
     struct timeval timeout;
@@ -36,15 +30,13 @@ int opens(){
     fd_set set;
 
     if ((fd = open(SERIAL_PORT, O_RDWR)) < 0)
-        {
+    {
         fprintf(stderr, "open error\n");
         exit(1);
-        }
+    }
 
     FD_ZERO(&set);
     FD_SET(fd, &set);
-
-    fprintf(stderr, "*** check *** aaa ***\n");
 
     bzero(&tio, sizeof(tio));
 
@@ -56,14 +48,17 @@ int opens(){
     fprintf(stderr, "*** check *** bbb ***\n");	
 
 
-	return fd;
+    return fd;
+}
+
+void sleepms(double i){
+	usleep(i * 1000);
 }
 
 unsigned short servo_position(int fd, unsigned char id,int pos){
     tx[0] = 0x80|id;
     tx[1] = (unsigned char)((pos & mask_h)>>7);
     tx[2] = (unsigned char)(pos & mask_l);
-    usleep(1.5*100000);
     for(int i=0;i<3;i++)
     {
         write(fd, &tx[i], sizeof(tx[i]));
@@ -72,15 +67,86 @@ unsigned short servo_position(int fd, unsigned char id,int pos){
 }
 
 unsigned short servo_speed(int fd, unsigned char id,int speed){
-        tx[0] = 0xC0|id;
-        tx[1] = 0x02;
-        tx[2] = 0x00|speed;
-        usleep(1.5*100000);
+    tx[0] = 0xC0|id;
+    tx[1] = 0x02;
+    tx[2] = 0x00|speed;
 	for(int i=0;i<3;i++)
-        {
-            write(fd, &tx[i], sizeof(tx[i]));
-        }
-        return 0;
+    {
+        write(fd, &tx[i], sizeof(tx[i]));
+    }
+    return 0;
+}
+
+void close_motion(int fd){
+	int j;
+	printf("moob1\n"); 
+    for(j=1;j<13;j++){
+        servo_speed(fd, j, 30);
+    }
+    for(j = 0; j < 10; j++){ 
+		servo_position(fd, 1,10167);
+    	servo_position(fd, 4,10167);
+    	servo_position(fd, 7,10167);
+    	servo_position(fd, 10,10167);
+	}
+	sleepms(1000);
+
+	printf("moob2\n"); 
+    for(j=1;j<13;j++){
+        servo_speed(fd, j,30);
+    }
+    for(j = 0; j < 10; j++){ 
+    	servo_position(fd, 1,10167);
+    	servo_position(fd, 4,10167);
+    	servo_position(fd, 7,10167);
+    	servo_position(fd, 10,10167);
+    	servo_position(fd, 2,7600);
+    	servo_position(fd, 5,7600);
+    	servo_position(fd, 8,7600);
+    	servo_position(fd, 11,7600);
+    } 
+	sleepms(1000);
+
+	printf("moob3\n"); 
+    for(j=1;j<13;j++){
+        servo_speed(fd, j,30);
+    }
+    for(j = 0; j < 10; j++){ 
+    	servo_position(fd, 1,10167);
+    	servo_position(fd, 4,10167);
+    	servo_position(fd, 7,10167);
+    	servo_position(fd, 10,10167);
+    	servo_position(fd, 2,7600);
+    	servo_position(fd, 5,7600);
+    	servo_position(fd, 8,7600);
+    	servo_position(fd, 11,7600);
+    	servo_position(fd, 3,11500);
+    	servo_position(fd, 6,11500);
+    	servo_position(fd, 9,11500);
+    	servo_position(fd, 12,11500);
+	}	
+	sleepms(1000);
+
+	printf("moob4\n"); 
+    for(j=1;j<13;j++){
+        servo_speed(fd, j,30);
+    }	
+    for(j = 0; j < 10; j++){ 
+    	servo_position(fd, 1,10167);
+    	servo_position(fd, 4,10167);
+    	servo_position(fd, 7,10167);
+    	servo_position(fd, 10,10167);
+    	servo_position(fd, 3,11500);
+    	servo_position(fd, 6,11500);
+    	servo_position(fd, 9,11500);
+    	servo_position(fd, 12,11500);
+    	servo_position(fd, 2,4933);
+    	servo_position(fd, 5,4933);
+    	servo_position(fd, 8,4933);
+    	servo_position(fd, 11,4933);
+	}
+	sleepms(1000);
+    return;
 }
 
 int main(){
@@ -90,47 +156,44 @@ int main(){
     pullUpDnControl(14,PUD_UP);
     pullUpDnControl(15,PUD_UP);
     usleep(50*1000);
-    //serial_servo.baud(115200);
-    //serial_servo.format(8,SerialBase::Even,1);
     fd = opens(); 
     
-    
     while(1){
-	scanf(" %c",&ch);
-        if(ch > 0x2f){ 
-	switch(ch){
-
-            case 'q':
-	    printf("start\n");
-            for(i = 3; i <= 12; i +=3){
-                servo_speed(fd, i,50);
-                servo_position(fd, i,10110);
-            }
-            usleep(0.5*1000000);
-	    ch=0;
-            break;
-            case 'u':
-	    printf("start\n");
-            for(i = 3; i <= 12; i +=3){
-                servo_speed(fd, i,50);
-                servo_position(fd, i,6000);
-            }
-            usleep(0.5*1000000);
-	    ch=0;
-            break;
-            case 's':
-	    close(fd);  
-	    exit(1);
-	    break;
+		scanf(" %c",&ch);
+   	    if(ch > 0x2f){ 
+			switch(ch){
+				case 'c':
+					close_motion(fd);
+	    			sleepms(50);
+            		ch = 0;
+            		printf("fin c\n");
+					break;	
             
-	    default:
-            printf("def\n");
-	    ch = 0;
-	    break;
-        }
-	}
+				case 'o':
+
+	
+				case '1':
+	    			printf("start\n");
+            		for(i = 3; i <= 12; i +=3){
+                		servo_speed(fd, i,50);
+                		servo_position(fd, i,10110);
+            		}
+	    			sleepms(50);
+					ch=0;
+            		break;
+            		
+				case 'f':
+	    			close(fd);  
+	    			exit(1);
+	    			break;
+            
+	    		default:
+            		printf("def\n");
+	    			ch = 0;
+	    			break;
+        	}
+		}
     }
-//		digitalWrite(18, 0);
-		return 0;
+	return 0;
 }
 
