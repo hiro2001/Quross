@@ -64,6 +64,7 @@ unsigned short servo_position(int fd, unsigned char id,int pos){
     	{
         	write(fd, &tx[i], sizeof(tx[i]));
     	}
+		sleepms(0.5);
     }
 	return 0;
 }
@@ -72,11 +73,12 @@ unsigned short servo_speed(int fd, unsigned char id,int speed){
     tx[0] = 0xC0|id;
     tx[1] = 0x02;
     tx[2] = 0x00|speed;
-	for(int i = 0;i < 10; i++){
+	for(int i = 0;i < 5; i++){
 		for(int i=0;i<3;i++)
    		{
         	write(fd, &tx[i], sizeof(tx[i]));
     	}
+		sleepms(0.5);
 	}
     return 0;
 }
@@ -581,7 +583,8 @@ void crawl_motion1(int fd){
         servo_position(fd, 4,crawl[i][9]);
         servo_position(fd, 5,crawl[i][10]);
         servo_position(fd, 6,crawl[i][11]);
-    }
+   		sleepms(2); 
+	}
 }
 
 void crawl_motion2(int fd ){
@@ -702,7 +705,8 @@ void crawl_motion2(int fd ){
         servo_position(fd, 4,crawl[i][9]);
         servo_position(fd, 5,crawl[i][10]);
         servo_position(fd, 6,crawl[i][11]);
-    }
+   		sleepms(2); 
+	}
 }
 
 void turn_left(int fd){
@@ -823,7 +827,8 @@ void turn_left(int fd){
         servo_position(fd, 7,left[j][9]);
         servo_position(fd, 8,left[j][10]);
         servo_position(fd, 9,left[j][11]);
-    }
+   		sleepms(2); 
+	}
 }
 
 void turn_right(int fd)
@@ -944,7 +949,8 @@ void turn_right(int fd)
         servo_position(fd, 7,right[j][9]);
         servo_position(fd, 8,right[j][10]);
         servo_position(fd, 9,right[j][11]);
-    }
+   		sleepms(2); 
+	}
 }
 
 int main(){
